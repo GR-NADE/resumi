@@ -44,30 +44,12 @@ app.use(cors({
             }
         }
 
+        console.error('CORS blocked for origin:', origin);
         const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
         return callback(new Error(msg), false);
     },
     credentials: true,
     optionsSuccessStatus: 200
-}));
-
-app.use(cors({
-    origin: function (origin, callback)
-    {
-        console.log('Incoming origin:', origin);
-        console.log('Allowed origin:', allowedOrigins);
-
-        if (!origin || allowedOrigins.includes(origin))
-        {
-            callback(null, true);
-        }
-        else
-        {
-            console.error('CORS blocked for origin:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
 }));
 
 const limiter = rateLimit({
@@ -93,23 +75,6 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
-    console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
-
-    console.log('Headers:', {
-        origin: req.headers.origin,
-        'content-type': req.headers['content-type'],
-        'content-length': req.headers['content-length']
-    });
-    next();
-});
-
-app.use((req, res, next) => {
-    req.url = req.url.replace(/\/\/+/g, '/');
-    next();
-});
-
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/analysis', analysisLimiter, analysisRoutes);
 
@@ -128,12 +93,6 @@ app.get('/', (req, res) => {
         version: '1.0.0'
     });
 });
-
-app.use('/api/upload', (req, res, next) =>
-{
-    console.log('Reached /api/upload base route');
-    next();
-})
 
 app.use((req, res) => {
     res.status(404).json({

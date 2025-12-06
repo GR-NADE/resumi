@@ -115,10 +115,6 @@ router.get('/test', (req, res) => {
 })
 
 router.post('/resume', upload.single('resume'), async (req, res) => {
-    console.log('=== UPLOAD ROUTE HIT ===');
-    console.log('Request body:', req.body);
-    console.log('Request file:', req.file);
-    console.log('Headers:', req.headers);
 
     let filePath = null;
 
