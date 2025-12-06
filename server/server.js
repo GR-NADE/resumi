@@ -91,6 +91,12 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+    console.log('Request Origin:', req.headers.origin);
+    next();
+})
+
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/analysis', analysisLimiter, analysisRoutes);
 
@@ -109,6 +115,12 @@ app.get('/', (req, res) => {
         version: '1.0.0'
     });
 });
+
+app.use('/api/upload', (req, res, next) =>
+{
+    console.log('Reached /api/upload base route');
+    next();
+})
 
 app.use((req, res) => {
     res.status(404).json({

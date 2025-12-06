@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-import PDFParser from 'pdf2json';
+import { PDFParser } from 'pdf2json';
 import { createWorker } from 'tesseract.js';
 
 const router = express.Router();
@@ -110,7 +110,16 @@ async function performImageOCR(filePath, fileSize, fileInfo)
     }
 }
 
+router.get('/test', (req, res) => {
+    res.json({ message: 'Upload route working!' });
+})
+
 router.post('/resume', upload.single('resume'), async (req, res) => {
+    console.log('=== UPLOAD ROUTE HIT ===');
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    console.log('Headers:', req.headers);
+
     let filePath = null;
 
     try
