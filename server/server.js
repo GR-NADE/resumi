@@ -17,17 +17,51 @@ const app = express();
 app.use(helmet());
 app.use(mongoSanitize());
 
-const allowedOrigins = process.env.NODE_ENV === 'production' ? [process.env.FRONTEND_URL] : ['http://localhost:3000', 'http://localhost:5173'];
+const allowedOrigins = process.env.NODE_ENV === 'production' ? [ process.env.FRONTEND_URL, 'https://resumi-omega.vercel.app', /\.vercel\.app$/, /\.onrender\.com$/, ] : ['http://localhost:3000', 'http://localhost:5173'];
 
 app.use(cors({
     origin: function (origin, callback)
     {
+        if (!origin) return callback(null, true);
+
+        for (let allowedOrigin of allowedOrigins)
+        {
+            if (typeof allowedOrigin === 'string')
+            {
+                if (allowedOrigin === origin)
+                {
+                    return callback(null, true);
+                }
+            }
+            else if (allowedOrigin instanceof RegExp)
+            {
+                if (allowedOrigin.test(origin))
+                {
+                    return callback(null, true);
+                }
+            }
+        }
+
+        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+        return callback(new Error(msg), false);
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
+
+app.use(cors({
+    origin: function (origin, callback)
+    {
+        console.log('Incoming origin:', origin);
+        console.log('Allowed origin:', allowedOrigins);
+
         if (!origin || allowedOrigins.includes(origin))
         {
             callback(null, true);
         }
         else
         {
+            console.error('CORS blocked for origin:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
