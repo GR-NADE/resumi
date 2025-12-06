@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-import { PDFParser } from 'pdf2json';
+import PDFParser from 'pdf2json';
 import { createWorker } from 'tesseract.js';
 
 const router = express.Router();
