@@ -75,10 +75,10 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use((req, res, next) => {
-    req.url = req.url.replace(/\/\/+/g, '/');
-    next();
-});
+// app.use((req, res, next) => {
+//     req.url = req.url.replace(/\/\/+/g, '/');
+//     next();
+// });
 
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/analysis', analysisLimiter, analysisRoutes);
