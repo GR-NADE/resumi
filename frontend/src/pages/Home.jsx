@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const buildApiUrl = (endpoint) => {
+    const base = API_BASE_URL.replace(/\/+$/, '');
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${base}${path}`;
+};
+
 function Home()
 {
     const [file, setFile] = useState(null);
@@ -72,7 +78,7 @@ function Home()
 
         try
         {
-            const response = await fetch(`${API_BASE_URL}/api/upload/resume`, {
+            const response = await fetch(buildApiUrl('api/upload/resume'), {
                 method: 'POST',
                 body: formData,
             });
@@ -112,7 +118,7 @@ function Home()
 
         try
         {
-            const response = await fetch(`${API_BASE_URL}/api/analysis/analyze`, {
+            const response = await fetch(buildApiUrl('api/analysis/analyze'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
