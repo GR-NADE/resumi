@@ -220,7 +220,7 @@ router.get('/test-hf', async (req, res) => {
 
         const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
-        const testResult = await ht.textGeneration({
+        const testResult = await hf.textGeneration({
             model: 'distilgpt2',
             inputs: 'Hello world',
             parameters: { max_length: 10 }
