@@ -82,6 +82,8 @@ router.post('/analyze', async (req, res) => {
         console.log('API Token first 10 chars:', process.env.HUGGINGFACE_API_TOKEN?.substring(0, 10) + '...');
         console.log('Model:', 'mistralai/Mistral-7B-Instruct-v0.2');
 
+        const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
+
         const response = await hf.chatCompletion({
             model: 'mistralai/Mistral-7B-Instruct-v0.2',
             messages: [
