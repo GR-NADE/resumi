@@ -85,7 +85,7 @@ router.post('/analyze', async (req, res) => {
         const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
         const response = await hf.chatCompletion({
-            model: 'mistralai/Mistral-7B-Instruct-v0.2',
+            model: 'google/flan-t5-xxl',
             messages: [
                 {
                     role: "user",
