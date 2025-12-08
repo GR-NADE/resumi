@@ -8,6 +8,10 @@ const router = express.Router();
 router.post('/analyze', async (req, res) => {
     try
     {
+        console.log('=== STARTING ANALYSIS ===');
+        console.log('Hugging Face Token exists:', !!process.env.HUGGINGFACE_API_TOKEN);
+        console.log('NODE_ENV:', process.env.NODE_ENV);
+
         const { resumeText, metadata } = req.body;
 
         if (!resumeText || resumeText.trim().length < 100)
@@ -31,8 +35,6 @@ router.post('/analyze', async (req, res) => {
                 message: 'AI service is not configured. Please contact support.'
             });
         }
-
-        const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
         const prompt = `
         You are an expert resume reviewer. Analyze this resume and provide feedback in JSON format.
@@ -76,6 +78,9 @@ router.post('/analyze', async (req, res) => {
         Return ONLY the JSON, no other text.`;
 
         console.log('Calling Hugging Face API...');
+
+        console.log('API Token first 10 chars:', process.env.HUGGINGFACE_API_TOKEN?.substring(0, 10) + '...');
+        console.log('Model:', 'mistralai/Mistral-7B-Instruct-v0.2');
 
         const response = await hf.chatCompletion({
             model: 'mistralai/Mistral-7B-Instruct-v0.2',
@@ -168,6 +173,17 @@ router.post('/analyze', async (req, res) => {
     }
     catch (error)
     {
+        console.error('=== ANALYSIS FAILED ===');
+        console.error('Error type:', error.constructor.name);
+        console.error('Error message:', error.message);
+        
+        if (error.httpResponse) {
+            console.error('HTTP Status:', error.httpResponse.status);
+            console.error('HTTP Body:', error.httpResponse.body);
+        }
+        
+        console.error('=== END ERROR ===');
+
         console.error('Resume analysis error:', error);
 
         res.status(500).json({
