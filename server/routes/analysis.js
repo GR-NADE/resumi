@@ -77,44 +77,19 @@ router.post('/analyze', async (req, res) => {
 
         console.log('Calling Hugging Face API...');
 
-        let response;
-        try
-        {
-            response = await hf.chatCompletion({
-                model: 'mistralai/Mistral-7B-Instruct-v0.2',
-                messages: [
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
-                max_tokens: 1000,
-                temperature: 0.7
-            });
+        const response = await hf.chatCompletion({
+            model: 'mistralai/Mistral-7B-Instruct-v0.2',
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            max_tokens: 1000,
+            temperature: 0.7
+        });
 
-            console.log('Hugging Face response recieved');
-        }
-        catch (hfError)
-        {
-            console.error('========== HUGGING FACE ERROR DETAILS ==========');
-            console.error('Error message:', hfError.message);
-            console.error('Error code:', hfError.code);
-            console.error('HTTP Status:', hfError.httpResponse?.status);
-            console.error('HTTP Request URL:', hfError.httpRequest?.url);
-            console.error('HTTP Request Method:', hfError.httpRequest?.method);
-            console.error('HTTP Request Headers:', hfError.httpRequest?.headers);
-
-            if (hfError.httpResponse?.body)
-            {
-                console.error('HTTP Response body:', JSON, stringify(hfError.httpResponse.body, null, 2));
-            }
-
-            console.error('Full error object:', JSON.stringify(hfError, null, 2));
-
-            console.error('========== END ERROR DETAILS ==========');
-
-            throw hfError;
-        }
+        console.log('Hugging Face response received');
 
         let analysisData;
         try
@@ -164,7 +139,7 @@ router.post('/analyze', async (req, res) => {
                     content: 7,
                     skills: 7,
                     experience: 7,
-                    achievements: 6,
+                    achievements: 6
                 },
                 keywordSuggestions: ["Industry terms", "Technical skills", "Soft skills"]
             };
@@ -193,60 +168,12 @@ router.post('/analyze', async (req, res) => {
     }
     catch (error)
     {
-        console.error('========== RESUME ANALYSIS ERROR ==========');
-        console.error('Error type:', error.constructor.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('========== END ERROR ==========');
+        console.error('Resume analysis error:', error);
 
         res.status(500).json({
             success: false,
             message: 'Failed to analyze resume. Please try again.',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-});
-
-router.get('/test-hf', async (req, res) => {
-    try
-    {
-        if (!process.env.HUGGINGFACE_API_TOKEN)
-        {
-            return res.json({
-                success: false,
-                message: 'HUGGINGFACE_API_TOKEN not set in environment'
-            });
-        }
-
-        const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
-
-        const testResult = await hf.textGeneration({
-            model: 'distilgpt2',
-            inputs: 'Hello world',
-            parameters: { max_length: 10 }
-        });
-
-        res.json({
-            sucess: true,
-            message: 'Hugging Face API is working',
-            model: 'distilgpt2',
-            testResult: testResult.generated_text
-        });
-    }
-    catch (error)
-    {
-        console.error('Hugging Face test failed DETAILS:', {
-            message: error.message,
-            httpResponse: error.httpResponse,
-            body: error.httpResponse?.body
-        });
-
-        res.json({
-            success: false,
-            message: 'Hugging Face API test failed',
-            error: error.message,
-            responseBody: error.httpResponse?.body,
-            status: error.httpResponse?.status
         });
     }
 });
