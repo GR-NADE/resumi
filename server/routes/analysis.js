@@ -84,16 +84,14 @@ router.post('/analyze', async (req, res) => {
 
         const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
-        const response = await hf.chatCompletion({
-            model: 'google/flan-t5-xxl',
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            max_tokens: 1000,
-            temperature: 0.7
+        const response = await hf.textGeneration({
+            model: 'mistralai/Mistral-7B-Instruct-v0.2',
+            inputs: prompt,
+            parameters: {
+                max_new_tokens: 1000,
+                temperature: 0.7,
+                return_full_text: false
+            }
         });
 
         console.log('Hugging Face response received');
@@ -101,7 +99,7 @@ router.post('/analyze', async (req, res) => {
         let analysisData;
         try
         {
-            const aiResponse = response.choices[0].message.content.trim();
+            const aiResponse = response.generated_text.trim();
             const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
             const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
 
