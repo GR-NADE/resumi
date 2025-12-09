@@ -77,7 +77,7 @@ router.post('/analyze', async (req, res) => {
 
         console.log('Calling Hugging Face API...');
 
-        const response = await hf.textGeneration({
+        const response = await hf.chatCompletion({
             model: 'mistralai/Mistral-7B-Instruct-v0.2',
             messages: [
                 {
