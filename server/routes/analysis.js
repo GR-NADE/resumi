@@ -180,7 +180,7 @@ router.post('/analyze', async (req, res) => {
 
         console.log(`Analysis saved with ID: ${uniqueId}`);
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
         res.json({
             success: true,
