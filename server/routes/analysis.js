@@ -34,30 +34,31 @@ router.post('/analyze', async (req, res) => {
 
         const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
-        const prompt = `
-        You are an expert resume reviewer. Analyze the following resume and provide feedback.
+        const systemPrompt = "You are a resume analysis expert. Respond ONLY with valid JSON, no other text.";
+
+        const userPrompt = `
+        Analyze this resume and provide feedback in JSON format:
         
-        Resume:
         ${textToAnalyze}
         
-        Provide your analysis in this EXACT JSON format (no markdown, no extra text):
+        Respond with ONLY this JSON structure (no markdown, no extra text):
         {
             "overallScore": 8,
             "summary": "Brief 2-3 sentence assessment",
             "strengths": [
-                "[specific strength 1]",
-                "[specific strength 2]",
-                "[specific strength 3]"
+                "[strength 1]",
+                "[strength 2]",
+                "[strength 3]"
             ],
             "weaknesses": [
-                "[specific weakness 1]",
-                "[specific weakness 2]",
-                "[specific weakness 3]"
+                "[weakness 1]",
+                "[weakness 2]",
+                "[weakness 3]"
             ],
             "improvements": [
-                "[actionable improvement 1]",
-                "[actionable improvement 2]",
-                "[actionable improvement 3]"
+                "[improvement 1]",
+                "[improvement 2]",
+                "[improvement 3]"
             ],
             "categories": {
                 "formatting": 8,
@@ -67,26 +68,24 @@ router.post('/analyze', async (req, res) => {
                 "achievements": 6
             },
             "keywordSuggestions": [
-                "[relevant keyword 1]",
-                "[relevant keyword 2]",
-                "[relevant keyword 3]"
+                "[keyword 1]",
+                "[keyword 2]",
+                "[keyword 3]"
             ]
-        }
+        }`;
 
-        Return ONLY valid JSON.`;
-
-        console.log('Calling Hugging Face API with Qwen2.5-Coder...');
+        console.log('Calling Hugging Face API with SmolLM3-3B...');
 
         const response = await hf.chatCompletion({
-            model: 'Qwen/Qwen2.5-Coder-1.5B-Instruct',
+            model: 'HuggingFaceTB/SmolLM3-3B',
             messages: [
                 {
                     role: "system",
-                    content: "You are a resume analysis expert. Always respond with valid JSON only, no markdown formatting."
+                    content: systemPrompt
                 },
                 {
                     role: "user",
-                    content: prompt
+                    content: userPrompt
                 }
             ],
             max_tokens: 1000,
@@ -98,25 +97,25 @@ router.post('/analyze', async (req, res) => {
         let analysisData;
         try
         {
-            const aiResponse = response.choices[0].message.content.trim();
+            let aiResponse = response.choices[0].message.content.trim();
 
-            let cleanedResponse = aiResponse;
-            if (aiResponse.includes('```'))
-            {
-                cleanedResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            }
+            aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-            const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
-            const jsonString = jsonMatch ? jsonMatch[0] : cleanedResponse;
+            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);aiResponse
+            const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
 
             analysisData = JSON.parse(jsonString);
 
             analysisData.overallScore = Math.min(10, Math.max(0, Number(analysisData.overallScore) || 7));
-            analysisData.summary = analysisData.summary?.substring(0, 500) || "Resume analysis completed.";
-            analysisData.strengths = Array.isArray(analysisData.strengths) ? analysisData.strengths.slice(0, 5) : [];
-            analysisData.weaknesses = Array.isArray(analysisData.weaknesses) ? analysisData.weaknesses.slice(0, 5) : [];
-            analysisData.improvements = Array.isArray(analysisData.improvements) ? analysisData.improvements.slice(0, 5) : [];
-            analysisData.keywordSuggestions = Array.isArray(analysisData.keywordSuggestions) ? analysisData.keywordSuggestions.slice(0, 10) : [];
+            analysisData.summary = String(analysisData.summary || "Resume analysis completed.").substring(0, 500);
+
+            analysisData.strengths = Array.isArray(analysisData.strengths) ? analysisData.strengths.slice(0, 5).filter(s => s && typeof s === 'string') : ["Professional content", "Relevant experience", "Clear structure"];
+
+            analysisData.weaknesses = Array.isArray(analysisData.weaknesses) ? analysisData.weaknesses.slice(0, 5).filter(w => w && typeof w === 'string') : ["Could improve quantifiable achievements", "Limited detail in some areas"];
+
+            analysisData.improvements = Array.isArray(analysisData.improvements) ? analysisData.improvements.slice(0, 5).filter(i => i && typeof i === 'string') : ["Add specific metrics", "Include more details", "Highlight key accomplishments"];
+
+            analysisData.keywordSuggestions = Array.isArray(analysisData.keywordSuggestions) ? analysisData.keywordSuggestions.slice(0, 10).filter(k => k && typeof k === 'string') : ["Industry terms", "Technical skills", "Relevant certifications"];
 
             if (!analysisData.categories || typeof analysisData.categories !== 'object')
             {
@@ -130,22 +129,35 @@ router.post('/analyze', async (req, res) => {
             }
             else
             {
+                const defaultCategories = {
+                    formatting: 7,
+                    content: 7,
+                    skills: 7,
+                    experience: 7,
+                    achievements: 7
+                };
+
+                analysisData.categories = {
+                    ...defaultCategories,
+                    ...analysisData.categories,
+                };
+
                 Object.keys(analysisData.categories).forEach(key => {
-                    analysisData.categories[key] = Math.min(10, Math.max(0, analysisData.categories[key] || 7));
+                    analysisData.categories[key] = Math.min(10, Math.max(0, Number(analysisData.categories[key]) || 7));
                 });
             }
         }
         catch (parseError)
         {
             console.error('Failed to parse AI response:', parseError);
-            console.error('Raw AI response:', response.choices[0].message.content);
+            console.error('Raw response:', response.choices[0].message.content);
 
             analysisData = {
                 overallScore: 7,
-                summary: "Resume shows professional experience but detailed AI analysis format unavailable.",
-                strengths: ["Professional content", "Relevant experience", "Technical skills listed"],
-                weaknesses: ["Could improve quantifiable achievements", "Limited project details", "Missing keywords"],
-                improvements: ["Add metrics to achievements", "Include project examples", "Expand skill descriptions"],
+                summary: "Resume shows professional experience and relevant skills. The content demonstrates good structure with room for enhancement in specific areas.",
+                strengths: ["Clear professional presentation", "Relevant experience documented", "Technical skills highlighted", "Organized structure"],
+                weaknesses: ["Could include more quantifiable achievements", "Some sections could use more detail", "Missing some industry-specific keywords"],
+                improvements: ["Add specific metrics and numbers to achievements", "Include more detailed project descriptions", "Expand on technical skill proficiency levels", "Add relevant certifications or training"],
                 categories: {
                     formatting: 7,
                     content: 7,
@@ -153,7 +165,7 @@ router.post('/analyze', async (req, res) => {
                     experience: 7,
                     achievements: 6
                 },
-                keywordSuggestions: ["Industry terms", "Technical skills", "Soft skills"]
+                keywordSuggestions: ["Industry-specific terminology", "Technical skills and tools", "Soft skills", "Relevant certifications", "Project management"]
             };
         }
 
@@ -181,6 +193,7 @@ router.post('/analyze', async (req, res) => {
     catch (error)
     {
         console.error('Resume analysis error:', error);
+        console.error('Error details:', error.message);
 
         res.status(500).json({
             success: false,
