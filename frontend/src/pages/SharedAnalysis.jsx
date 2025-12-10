@@ -20,8 +20,7 @@ function SharedAnalysis()
         const fetchAnalysis = async () => {
             try
             {
-                const response = await fetch(buildApiUrl(`api/analysis/${uniqueId}`))
-                // const response = await fetch(`${API_BASE_URL}/api/analysis/${uniqueId}`);
+                const response = await fetch(buildApiUrl(`api/analysis/${uniqueId}`));
                 const data = await response.json();
 
                 if (data.success)
