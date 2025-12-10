@@ -35,29 +35,29 @@ router.post('/analyze', async (req, res) => {
         const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
         const prompt = `
-        You are an expert resume reviewer. Analyze this resume and provide feedback in JSON format.
+        You are an expert resume reviewer. Analyze the following resume and provide feedback.
         
         Resume:
         ${textToAnalyze}
         
-        Please provide your analysis as valid JSON with this structure:
+        Provide your analysis in this EXACT JSON format (no markdown, no extra text):
         {
             "overallScore": 8,
             "summary": "Brief 2-3 sentence assessment",
             "strengths": [
-                "[strength1]",
-                "[strength2]",
-                "[strength3]"
+                "[specific strength 1]",
+                "[specific strength 2]",
+                "[specific strength 3]"
             ],
             "weaknesses": [
-                "[weakness1]",
-                "[weakness2]",
-                "[weakness3]"
+                "[specific weakness 1]",
+                "[specific weakness 2]",
+                "[specific weakness 3]"
             ],
             "improvements": [
-                "[improvement1]",
-                "[improvement2]",
-                "[improvement3]"
+                "[actionable improvement 1]",
+                "[actionable improvement 2]",
+                "[actionable improvement 3]"
             ],
             "categories": {
                 "formatting": 8,
@@ -67,26 +67,30 @@ router.post('/analyze', async (req, res) => {
                 "achievements": 6
             },
             "keywordSuggestions": [
-                "[keyword1]",
-                "[keyword2]",
-                "[keyword3]"
+                "[relevant keyword 1]",
+                "[relevant keyword 2]",
+                "[relevant keyword 3]"
             ]
         }
 
-        Return ONLY the JSON, no other text.`;
+        Return ONLY valid JSON.`;
 
-        console.log('Calling Hugging Face API...');
+        console.log('Calling Hugging Face API with Qwen2.5-Coder...');
 
         const response = await hf.chatCompletion({
-            model: 'mistralai/Mistral-7B-Instruct-v0.2',
+            model: 'Qwen/Qwen2.5-Coder-1.5B-Instruct',
             messages: [
+                {
+                    role: "system",
+                    content: "You are a resume analysis expert. Always respond with valid JSON only, no markdown formatting."
+                },
                 {
                     role: "user",
                     content: prompt
                 }
             ],
             max_tokens: 1000,
-            temperature: 0.7
+            temperature: 0.3
         });
 
         console.log('Hugging Face response received');
@@ -95,17 +99,24 @@ router.post('/analyze', async (req, res) => {
         try
         {
             const aiResponse = response.choices[0].message.content.trim();
-            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-            const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
+
+            let cleanedResponse = aiResponse;
+            if (aiResponse.includes('```'))
+            {
+                cleanedResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            }
+
+            const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+            const jsonString = jsonMatch ? jsonMatch[0] : cleanedResponse;
 
             analysisData = JSON.parse(jsonString);
 
-            analysisData.overallScore = Math.min(10, Math.max(0, analysisData.overallScore || 7));
+            analysisData.overallScore = Math.min(10, Math.max(0, Number(analysisData.overallScore) || 7));
             analysisData.summary = analysisData.summary?.substring(0, 500) || "Resume analysis completed.";
-            analysisData.strengths = (analysisData.strengths || []).slice(0, 5);
-            analysisData.weaknesses = (analysisData.weaknesses || []).slice(0, 5);
-            analysisData.improvements = (analysisData.improvements || []).slice(0, 5);
-            analysisData.keywordSuggestions = (analysisData.keywordSuggestions || []).slice(0, 10);
+            analysisData.strengths = Array.isArray(analysisData.strengths) ? analysisData.strengths.slice(0, 5) : [];
+            analysisData.weaknesses = Array.isArray(analysisData.weaknesses) ? analysisData.weaknesses.slice(0, 5) : [];
+            analysisData.improvements = Array.isArray(analysisData.improvements) ? analysisData.improvements.slice(0, 5) : [];
+            analysisData.keywordSuggestions = Array.isArray(analysisData.keywordSuggestions) ? analysisData.keywordSuggestions.slice(0, 10) : [];
 
             if (!analysisData.categories || typeof analysisData.categories !== 'object')
             {
@@ -127,6 +138,7 @@ router.post('/analyze', async (req, res) => {
         catch (parseError)
         {
             console.error('Failed to parse AI response:', parseError);
+            console.error('Raw AI response:', response.choices[0].message.content);
 
             analysisData = {
                 overallScore: 7,
