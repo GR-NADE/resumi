@@ -3,6 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const buildApiUrl = (endpoint) => {
+    const base = API_BASE_URL.replace(/\/+$/, '');
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${base}${path}`;
+};
+
 function SharedAnalysis()
 {
     const { uniqueId } = useParams();
@@ -14,7 +20,8 @@ function SharedAnalysis()
         const fetchAnalysis = async () => {
             try
             {
-                const response = await fetch(`${API_BASE_URL}/api/analysis/${uniqueId}`);
+                const response = await fetch(buildApiUrl(`api/analysis/${uniqueId}`))
+                // const response = await fetch(`${API_BASE_URL}/api/analysis/${uniqueId}`);
                 const data = await response.json();
 
                 if (data.success)
