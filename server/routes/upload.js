@@ -184,10 +184,10 @@ async function performImageOCR(filePath, fileSize, fileInfo)
         const { data: { text } } = await worker.recognize(filePath);
         const ocrText = text.trim();
         await worker.terminate();
-        await cleanupFile(filePath);
 
         if (!ocrText || ocrText.length < 50)
         {
+            await cleanupFile(filePath);
             return {
                 success: false,
                 status: 400,
@@ -197,6 +197,34 @@ async function performImageOCR(filePath, fileSize, fileInfo)
 
         console.log(`Image OCR successful: extracted ${ocrText.length} characters`);
 
+        const validation = await validateResume(ocrText);
+
+        if (!validation.isResume)
+        {
+            await cleanupFile(filePath);
+
+            let message = `This doesnt appear to be a resume.`;
+
+            if (validation.detectedContent && validation.detectedContent !== 'unknown')
+            {
+                message += `The uploaded image appears to contain ${validation.detectedContent}. `;
+            }
+
+            message += `Please upload an image of your actual resume/CV containing sections like experience, education, and skills.`;
+
+            return {
+                success: false,
+                status: 400,
+                message: message,
+                validationDetails: {
+                    detectedContent: validation.detectedContent,
+                    confidence: validation.confidence
+                }
+            };
+        }
+
+        await cleanupFile(filePath);
+
         return {
             success: true,
             data: {
@@ -205,7 +233,11 @@ async function performImageOCR(filePath, fileSize, fileInfo)
                 mimeType: fileInfo.mimetype,
                 textLength: ocrText.length,
                 extractedText: ocrText,
-                processingMethod: 'Image OCR'
+                processingMethod: 'Image OCR',
+                validation: {
+                    isResume: true,
+                    confidence: validation.confidence
+                }
             }
         };
     }
@@ -318,6 +350,31 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
                 });
             }
 
+            const validation = await validateResume(extractedText);
+
+            if (!validation.isResume)
+            {
+                await cleanupFile(filePath);
+
+                let message = `This PDF doesn't appear to be a resume.`;
+
+                if (validation.detectedContent && validation.detectedContent !== 'unknown')
+                {
+                    message += `The uploaded document appears to be ${validation,detectedContent}.`;
+                }
+
+                message += `Please upload your actual resume/CV containing sections like work experience, education, and skills.`;
+
+                return res.status(400).json({
+                    success: false,
+                    message: message,
+                    validationDetails: {
+                        detectedContent: validation.detectedContent,
+                        confidence: validation.confidence
+                    }
+                });
+            }
+
             await cleanupFile(filePath);
 
             console.log(`Successfully extracted ${extractedText.length} characters from PDF`);
@@ -331,7 +388,11 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
                     mimeType: req.file.mimetype,
                     textLength: extractedText.length,
                     extractedText: extractedText,
-                    processingMethod: 'PDF Extraction'
+                    processingMethod: 'PDF Extraction',
+                    validation: {
+                        isResume: true,
+                        confidence: validation.confidence
+                    }
                 }
             });
         }

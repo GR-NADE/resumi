@@ -241,7 +241,7 @@ function Home()
 
                     {file && !extractedText && (
                         <button onClick = {uploadFile} disabled = {uploading} className = {`mt-6 w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-                            {uploading ? 'Validating and Extracting Text...' : 'Extract Text'}
+                            {uploading ? 'Extracting Text...' : 'Extract Text'}
                         </button>
                     )}
 
@@ -272,7 +272,7 @@ function Home()
                                         <path fillRule = "evenodd" d = "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule = "evenodd"/>
                                     </svg>
                                     <div className = "flex-1">
-                                        <h3 className = "text-lg font-semibold text-green-800 mb-2">Resume Validated & Text Extracted Successfully!</h3>
+                                        <h3 className = "text-lg font-semibold text-green-800 mb-2">Text Extracted Successfully!</h3>
                                         {validationDetails && validationDetails.confidence && (
                                             <p className = "text-green-700 text-sm mb-3">
                                                 Validation confidence: {validationDetails.confidence}%
