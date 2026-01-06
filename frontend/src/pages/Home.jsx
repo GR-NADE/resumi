@@ -16,6 +16,7 @@ function Home()
     const [analyzing, setAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState(null);
     const [error, setError] = useState('');
+    const [validationDetails, setValidationDetails] = useState(null);
 
     const handleFileSelect = (selectedFile) => {
         const allowedTypes = [
@@ -38,6 +39,7 @@ function Home()
             setError('');
             setExtractedText('')
             setAnalysis(null);
+            setValidationDetails(null);
         }
         else
         {
@@ -72,6 +74,7 @@ function Home()
         setError('');
         setExtractedText('')
         setAnalysis(null);
+        setValidationDetails(null);
 
         const formData = new FormData();
         formData.append('resume', file);
@@ -88,11 +91,19 @@ function Home()
             if (data.success)
             {
                 setExtractedText(data.data.extractedText);
+                if (data.data.validation)
+                {
+                    setValidationDetails(data.data.validation);
+                }
                 console.log('Upload successful:', data);
             }
             else
             {
                 setError(data.message || 'Upload failed');
+                if (data.validationDetails)
+                {
+                    setValidationDetails(data.validationDetails);
+                }
             }
         }
         catch (err)
@@ -217,7 +228,11 @@ function Home()
                                     <p className = "font-medium text-blue-900">{file.name}</p>
                                     <p className = "text-sm text-blue-600">{(file.size / 1024).toFixed(1)} KB</p>
                                 </div>
-                                <button onClick = {() => setFile(null)} className = "text-blue-600 hover:text-blue-800" aria-label = "Remove file">
+                                <button onclick = {() => {
+                                    setFile(null);
+                                    setError('');
+                                    setValidationDetails(null);
+                                }} className = "text-blue-600 hover:text-blue-800" aria-label = "Remove file">
                                     ✕
                                 </button>
                             </div>
@@ -226,23 +241,48 @@ function Home()
 
                     {file && !extractedText && (
                         <button onClick = {uploadFile} disabled = {uploading} className = {`mt-6 w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-                            {uploading ? 'Processing...' : 'Extract Text'}
+                            {uploading ? 'Validating and Extracting Text...' : 'Extract Text'}
                         </button>
                     )}
 
                     {error && (
                         <div className = "mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p className = "text-red-800">{error}</p>
+                            <div className = "flex items-start">
+                                <svg className = "h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill = "currentColor" viewBox = "0 0 20 20">
+                                    <path fillRule = "evenodd" d = "M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule = "evenodd"/>
+                                </svg>
+                                <div className = "flex-1">
+                                    <p className = "text-red-800 font-medium">{error}</p>
+                                    {validationDetails && validationDetails.detectedContent && (
+                                        <p className = "text-red-700 text-sm mt-2">
+                                            Detected content type: <span className = "font-medium">{validationDetails.detectedContent}</span>
+                                            {validationDetails.confidence && ` (${validationDetails.confidence}% confidence)`}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {extractedText && !analysis && (
                         <div className = "mt-6">
                             <div className = "p-6 bg-green-50 border border-green-200 rounded-lg mb-4">
-                                <h3 className = "text-lg font-semibold text-green-800 mb-3">Text Extracted Successfully!</h3>
-                                <div className = "">
-                                    {extractedText.substring(0, 300)}
-                                    {extractedText.length > 300 && '...'}
+                                <div className = "flex items-start">
+                                    <svg className = "h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill = "currentColor" viewBox = "0 0 20 20">
+                                        <path fillRule = "evenodd" d = "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule = "evenodd"/>
+                                    </svg>
+                                    <div className = "flex-1">
+                                        <h3 className = "text-lg font-semibold text-green-800 mb-2">Resume Validated & Text Extracted Successfully!</h3>
+                                        {validationDetails && validationDetails.confidence && (
+                                            <p className = "text-green-700 text-sm mb-3">
+                                                Validation confidence: {validationDetails.confidence}%
+                                            </p>
+                                        )}
+                                        <div className = "text-gray-700 text-sm bg-white p-3 rounded border border-green-200 overflow-auto max-h-32">
+                                            {extractedText.substring(0, 300)}
+                                            {extractedText.length > 300 && '...'}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -345,6 +385,8 @@ function Home()
                             setFile(null)
                             setExtractedText('')
                             setAnalysis(null)
+                            setValidationDetails(null)
+                            setError('')
                         }} className = "mt-8 w-full py-3 px-6 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition duration-200">Analyze Another Resume</button>
                     </div>
                 )}
