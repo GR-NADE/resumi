@@ -66,11 +66,11 @@ async function validateResume(text)
 {
     try
     {
-        const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
+        const HF_API_KEY = process.env.HUGGINGFACE_API_TOKEN;
 
         if (!HF_API_KEY)
         {
-            console.error('HUGGINGFACE_API_KEY not found in environment variables');
+            console.error('HUGGINGFACE_API_TOKEN not found in environment variables');
             return {
                 isResume: false,
                 confidence: 0,
@@ -356,7 +356,7 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
             {
                 await cleanupFile(filePath);
 
-                let message = `This PDF doesn't appear to be a resume.`;
+                let message = `This PDF doesn't appear to be a resume. `;
 
                 if (validation.detectedContent && validation.detectedContent !== 'unknown')
                 {
