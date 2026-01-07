@@ -363,7 +363,7 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
                     message += `The uploaded document appears to be ${validation,detectedContent}.`;
                 }
 
-                message += `Please upload your actual resume/CV containing sections like work experience, education, and skills.`;
+                message += `Please upload your actual resume/CV.`;
 
                 return res.status(400).json({
                     success: false,

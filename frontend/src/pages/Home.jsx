@@ -224,11 +224,11 @@ function Home()
                     {file && (
                         <div className = "mt-6 p-4 bg-blue-50 rounded-lg">
                             <div className = "flex items-center justify-between">
-                                <div>
-                                    <p className = "font-medium text-blue-900">{file.name}</p>
+                                <div className = "flex-1 min-w-0">
+                                    <p className = "font-medium text-blue-900 truncate">{file.name}</p>
                                     <p className = "text-sm text-blue-600">{(file.size / 1024).toFixed(1)} KB</p>
                                 </div>
-                                <button onclick = {() => {
+                                <button onClick = {() => {
                                     setFile(null);
                                     setError('');
                                     setValidationDetails(null);
@@ -240,7 +240,7 @@ function Home()
                     )}
 
                     {file && !extractedText && (
-                        <button onClick = {uploadFile} disabled = {uploading} className = {`mt-6 w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+                        <button C = {uploadFile} disabled = {uploading} className = {`mt-6 w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
                             {uploading ? 'Extracting Text...' : 'Extract Text'}
                         </button>
                     )}
@@ -261,17 +261,10 @@ function Home()
                     {extractedText && !analysis && (
                         <div className = "mt-6">
                             <div className = "p-6 bg-green-50 border border-green-200 rounded-lg mb-4">
-                                <div className = "flex items-start">
-                                    <svg className = "h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill = "currentColor" viewBox = "0 0 20 20">
-                                        <path fillRule = "evenodd" d = "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule = "evenodd"/>
-                                    </svg>
-                                    <div className = "flex-1">
-                                        <h3 className = "text-lg font-semibold text-green-800 mb-2">Text Extracted Successfully!</h3>
-                                        <div className = "text-gray-700 text-sm bg-white p-3 rounded border border-green-200 overflow-auto max-h-32">
-                                            {extractedText.substring(0, 300)}
-                                            {extractedText.length > 300 && '...'}
-                                        </div>
-                                    </div>
+                                <h3 className = "text-lg font-semibold text-green-800 mb-3">Text Extracted Successfully!</h3>
+                                <div className = "bg-white p-4 rounded border max-h-40 overflow-y-auto text-sm text-gray-700">
+                                    {extractedText.substring(0, 300)}
+                                    {extractedText.length > 300 && '...'}
                                 </div>
                             </div>
 
@@ -289,14 +282,14 @@ function Home()
                         {analysis.shareableLink && (
                             <div className = "mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                 <p className = "text-sm text-blue-900 font-medium mb-2">Share this analysis:</p>
-                                <div className = "flex items-center gap-2">
+                                <div className = "flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                     <input type = "text" value = {analysis.shareableLink} readOnly className = "flex-1 px-3 py-2 bg-white border border-blue-300 rounded text-sm text-gray-700" aria-label = "Shareable link"/>
                                     <button
                                         onClick = {() => copyToClipboard(analysis.shareableLink)}
-                                        className = "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">
+                                        className = "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
                                             Copy
                                     </button>
-                                    <a href = {`/analysis/${analysis.uniqueId}`} target = "_blank" rel = "noopener noreferrer" className = "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium">View</a>
+                                    <a href = {`/analysis/${analysis.uniqueId}`} target = "_blank" rel = "noopener noreferrer" className = "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium text-center whitespace-nowrap">View</a>
                                 </div>
                             </div>
                         )}
@@ -370,7 +363,7 @@ function Home()
                             </div>
                         </div>
 
-                        <button onClick = {() => {
+                        <button C = {() => {
                             setFile(null)
                             setExtractedText('')
                             setAnalysis(null)
