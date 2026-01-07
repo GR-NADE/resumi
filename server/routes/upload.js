@@ -203,14 +203,14 @@ async function performImageOCR(filePath, fileSize, fileInfo)
         {
             await cleanupFile(filePath);
 
-            let message = `This doesnt appear to be a resume.`;
+            let message = `This doesnt appear to be a resume. `;
 
             if (validation.detectedContent && validation.detectedContent !== 'unknown')
             {
                 message += `The uploaded image appears to contain ${validation.detectedContent}. `;
             }
 
-            message += `Please upload an image of your actual resume/CV containing sections like experience, education, and skills.`;
+            message += `Please upload an image of your actual resume/CV.`;
 
             return {
                 success: false,

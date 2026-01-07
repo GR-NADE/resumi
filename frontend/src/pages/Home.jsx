@@ -253,12 +253,6 @@ function Home()
                                 </svg>
                                 <div className = "flex-1">
                                     <p className = "text-red-800 font-medium">{error}</p>
-                                    {validationDetails && validationDetails.detectedContent && (
-                                        <p className = "text-red-700 text-sm mt-2">
-                                            Detected content type: <span className = "font-medium">{validationDetails.detectedContent}</span>
-                                            {validationDetails.confidence && ` (${validationDetails.confidence}% confidence)`}
-                                        </p>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -273,11 +267,6 @@ function Home()
                                     </svg>
                                     <div className = "flex-1">
                                         <h3 className = "text-lg font-semibold text-green-800 mb-2">Text Extracted Successfully!</h3>
-                                        {validationDetails && validationDetails.confidence && (
-                                            <p className = "text-green-700 text-sm mb-3">
-                                                Validation confidence: {validationDetails.confidence}%
-                                            </p>
-                                        )}
                                         <div className = "text-gray-700 text-sm bg-white p-3 rounded border border-green-200 overflow-auto max-h-32">
                                             {extractedText.substring(0, 300)}
                                             {extractedText.length > 300 && '...'}
