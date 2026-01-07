@@ -240,7 +240,7 @@ function Home()
                     )}
 
                     {file && !extractedText && (
-                        <button C = {uploadFile} disabled = {uploading} className = {`mt-6 w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+                        <button onClick = {uploadFile} disabled = {uploading} className = {`mt-6 w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
                             {uploading ? 'Extracting Text...' : 'Extract Text'}
                         </button>
                     )}
@@ -363,7 +363,7 @@ function Home()
                             </div>
                         </div>
 
-                        <button C = {() => {
+                        <button onClick = {() => {
                             setFile(null)
                             setExtractedText('')
                             setAnalysis(null)
