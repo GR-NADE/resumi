@@ -83,7 +83,7 @@ async function validateResume(text)
             'experience', 'education', 'skills', 'work', 'employment', 'university', 'degree', 'bachelor', 'master', 'phd', 'certificate', 'project', 'achievement', 'responsibilities', 'objective', 'summary', 'references', 'languages', 'qualification'
         ];
 
-        const textLower = text.toLowercase();
+        const textLower = text.toLowerCase();
         const keywordMatches = resumeKeywords.filter(keyword => textLower.includes(keyword));
         const hasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
         const hasPhone = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(text);
