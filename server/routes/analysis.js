@@ -34,17 +34,18 @@ router.post('/analyze', async (req, res) => {
 
         const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
 
-        const systemPrompt = "You are a resume analysis expert. Respond ONLY with valid JSON, no other text.";
+        const systemPrompt = "You are a professional resume analysis expert. You provide detailed, constructive feedback on resumes. Always respond with valid JSON only.";
 
         const userPrompt = `
-        Analyze this resume and provide feedback in JSON format:
-        
+        Analyze this resume and provide detailed feedback.
+
+        Resume:
         ${textToAnalyze}
         
-        Respond with ONLY this JSON structure (no markdown, no extra text):
+        Respond with ONLY valid JSON in this exact structure:
         {
             "overallScore": 8,
-            "summary": "Brief 2-3 sentence assessment",
+            "summary": "Brief 2-3 sentence professional assessment of the resume",
             "strengths": [
                 "[strength 1]",
                 "[strength 2]",
@@ -72,12 +73,14 @@ router.post('/analyze', async (req, res) => {
                 "[keyword 2]",
                 "[keyword 3]"
             ]
-        }`;
+        }
+            
+        Return only the JSON object, no other text.`;
 
-        console.log('Calling Hugging Face API with SmolLM3-3B...');
+        console.log('Calling HuggingFace API with Llama-3.2-3B-Instruct...');
 
         const response = await hf.chatCompletion({
-            model: 'HuggingFaceTB/SmolLM3-3B',
+            model: 'meta-llama/Llama-3.2-3B-Instruct',
             messages: [
                 {
                     role: "system",
@@ -89,10 +92,10 @@ router.post('/analyze', async (req, res) => {
                 }
             ],
             max_tokens: 1000,
-            temperature: 0.3
+            temperature: 0.4
         });
 
-        console.log('Hugging Face response received');
+        console.log('HuggingFace response received');
 
         let analysisData;
         try
