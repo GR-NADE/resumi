@@ -1,5 +1,5 @@
 import express from 'express';
-import { HfInference } from '@huggingface/inference';
+import Groq from 'groq-sdk';
 import Analysis from '../models/Analysis.js';
 import crypto from 'crypto';
 
@@ -23,16 +23,18 @@ router.post('/analyze', async (req, res) => {
 
         console.log(`Analyzing resume text (${textToAnalyze.length} characters)...`);
 
-        if (!process.env.HUGGINGFACE_API_TOKEN)
+        if (!process.env.GROQ_API_KEY)
         {
-            console.error('HuggingFace API token not configured');
+            console.error('Groq API key not configured');
             return res.status(500).json({
                 success: false,
                 message: 'AI service is not configured. Please contact support.'
             });
         }
 
-        const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN);
+        const groq = new Groq({
+            apiKey: process.env.GROQ_API_KEY
+        });
 
         const systemPrompt = "You are a professional resume analysis expert. You provide detailed, constructive feedback on resumes. Always respond with valid JSON only.";
 
@@ -77,10 +79,9 @@ router.post('/analyze', async (req, res) => {
             
         Return only the JSON object, no other text.`;
 
-        console.log('Calling HuggingFace API with Llama-3.2-3B-Instruct...');
+        console.log('Calling Groq API with Llama-3.3-70B-Versatile...');
 
-        const response = await hf.chatCompletion({
-            model: 'meta-llama/Llama-3.2-3B-Instruct',
+        const chatCompletion = await groq.chat.completions.create({
             messages: [
                 {
                     role: "system",
@@ -91,16 +92,18 @@ router.post('/analyze', async (req, res) => {
                     content: userPrompt
                 }
             ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.4,
             max_tokens: 1000,
-            temperature: 0.4
+            top_p: 1
         });
 
-        console.log('HuggingFace response received');
+        console.log('Groq response received');
 
         let analysisData;
         try
         {
-            let aiResponse = response.choices[0].message.content.trim();
+            let aiResponse = chatCompletion.choices[0].message.content.trim();
 
             aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
@@ -153,7 +156,7 @@ router.post('/analyze', async (req, res) => {
         catch (parseError)
         {
             console.error('Failed to parse AI response:', parseError);
-            console.error('Raw response:', response.choices[0].message.content);
+            console.error('Raw response:', chatCompletion.choices[0].message.content);
 
             analysisData = {
                 overallScore: 7,
@@ -243,7 +246,7 @@ router.get('/:uniqueId', async (req, res) => {
         console.error('Error fetching analysis:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch analyis'
+            message: 'Failed to fetch analysis'
         });
     }
 });
