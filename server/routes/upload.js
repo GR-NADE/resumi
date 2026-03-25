@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import PDFParser from 'pdf2json';
 import { createWorker } from 'tesseract.js';
+import Groq from 'groq-sdk';
 
 const router = express.Router();
 
@@ -53,8 +54,8 @@ async function cleanupFile(filePath)
 {
     try
     {
-        await fs.access(filePath);
-        await fs.unlink(filePath);
+        await fs.promises.access(filePath);
+        await fs.promises.unlink(filePath);
     }
     catch (error)
     {
@@ -66,11 +67,11 @@ async function validateResume(text)
 {
     try
     {
-        const HF_API_KEY = process.env.HUGGINGFACE_API_TOKEN;
+        const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-        if (!HF_API_KEY)
+        if (!GROQ_API_KEY)
         {
-            console.error('HUGGINGFACE_API_TOKEN not found in environment variables');
+            console.error('GROQ_API_KEY not found in environment variables');
             return {
                 isResume: false,
                 confidence: 0,
@@ -88,75 +89,60 @@ async function validateResume(text)
         const hasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
         const hasPhone = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(text);
 
-        if (keywordMatches.length < 3 && !hasEmail)
+        if (keywordMatches.length >= 3 && hasEmail)
         {
-            const prompt = `
-                Analyze this text and identify what type of document it is. Is it a resume/CV, or something else (like a recipe, article, book page, letter, etc.)? Be specific about what you detect.
-
-                Text to analyze:
-                ${text.substring(0, 1000)}
-
-                Respond in this exact format:
-                Document Type: [type]
-                Confidence: [0-100]
-                Reason: [brief explanation]
-            `;
-
-            const response = await fetch(
-                "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
-                {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${HF_API_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        inputs: prompt,
-                        parameters: {
-                            max_new_tokens: 150,
-                            temperature: 0.3,
-                            top_p: 0.9,
-                        }
-                    })
-                }
-            );
-
-            if (!response.ok)
-            {
-                console.error('Hugging Face API error:', response.status);
-                return {
-                    isResume: false,
-                    confidence: 30,
-                    detectedContent: 'non-resume document',
-                    reason: 'Insufficient resume-specific content detected'
-                };
-            }
-
-            const result = await response.json();
-            const aiResponse = result[0]?.generated_text || '';
-
-            const isResumeDetected = /resume|cv|curriculum vitae/i.test(aiResponse);
-            const detectedType = aiResponse.match(/Document Type:\s*([^\n]+)/i)?.[1]?.trim() || 'unknown document';
-            const confidenceMatch = aiResponse.match(/Confidence:\s*(\d+)/i);
-            const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) : 0;
-            const reasonMatch = aiResponse.match(/Reason:\s*([^\n]+)/i);
-            const reason = reasonMatch?.[1]?.trim() || 'Content does not match resume format';
-
-            console.log('AI Validation Result:', { isResumeDetected, detectedType, confidence, reason });
-
             return {
-                isResume: isResumeDetected && confidence > 60,
-                confidence: confidence,
-                detectedContent: detectedType,
-                reason: reason
+                isResume: true,
+                confidence: 85,
+                detectedContent: 'resume/cv',
+                reason: 'Document contains resume-specific content and structure'
             };
         }
 
+        const groq = new Groq({
+            apiKey: GROQ_API_KEY
+        });
+        
+        const prompt = `
+            Analyze this text and identify what type of document it is. Is it a resume/CV, or something else (like a recipe, article, book page, letter, etc.)? Be specific about what you detect.
+
+            Text to analyze:
+            ${text.substring(0, 1000)}
+
+            Respond in this exact format:
+            Document Type: [type]
+            Confidence: [0-100]
+            Reason: [brief explanation]
+        `;
+
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.3,
+            max_tokens: 150
+        });
+
+        const aiResponse = chatCompletion.choices[0].message.content;
+
+        const isResumeDetected = /resume|cv|curriculum vitae/i.test(aiResponse);
+        const detectedType = aiResponse.match(/Document Type:\s*([^\n]+)/i)?.[1]?.trim() || 'unknown document';
+        const confidenceMatch = aiResponse.match(/Confidence:\s*(\d+)/i);
+        const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) : 0;
+        const reasonMatch = aiResponse.match(/Reason:\s*([^\n]+)/i);
+        const reason = reasonMatch?.[1]?.trim() || 'Content does not match resume format';
+
+        console.log('AI Validation Result:', { isResumeDetected, detectedType, confidence, reason });
+
         return {
-            isResume: true,
-            confidence: 85,
-            detectedContent: 'resume/cv',
-            reason: 'Document contains resume-specific content and structure'
+            isResume: isResumeDetected && confidence > 60,
+            confidence: confidence,
+            detectedContent: detectedType,
+            reason: reason
         };
     }
     catch (error)
@@ -203,7 +189,7 @@ async function performImageOCR(filePath, fileSize, fileInfo)
         {
             await cleanupFile(filePath);
 
-            let message = `This doesnt appear to be a resume. `;
+            let message = `This doesn't appear to be a resume. `;
 
             if (validation.detectedContent && validation.detectedContent !== 'unknown')
             {
@@ -360,7 +346,7 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
 
                 if (validation.detectedContent && validation.detectedContent !== 'unknown')
                 {
-                    message += `The uploaded document appears to be ${validation,detectedContent}.`;
+                    message += `The uploaded document appears to be ${validation.detectedContent}.`;
                 }
 
                 message += `Please upload your actual resume/CV.`;
