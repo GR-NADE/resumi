@@ -103,7 +103,7 @@ function SharedAnalysis()
                     </div>
                 </div>
 
-                <div className = "mb-8 p-6 bg-purple-50 rounded-lg border border-purple-200">
+                <div className = "mb-8 p-6 bg-purple-50 rounded-bl-lg rounded-br-lg border border-purple-200">
                     <h3 className = "text-xl font-semibold text-purple-900 mb-3">Summary</h3>
                     <p className = "text-gray-700">{analysisData.summary}</p>
                 </div>
