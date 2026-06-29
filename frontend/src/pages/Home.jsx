@@ -192,7 +192,7 @@ function Home()
         <div className = "container mx-auto px-4 py-8">
             <div className = "max-w-2xl mx-auto">
                 <h1 className = "text-4xl font-bold text-center text-gray-900 mb-2">
-                    Resume Rating App
+                    Resumi
                 </h1>
                 <p className = "text-xl text-center text-gray-600 mb-8">
                     Get AI-powered feedback on your resume
