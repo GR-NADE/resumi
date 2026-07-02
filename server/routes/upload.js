@@ -122,9 +122,11 @@ async function validateResume(text)
                     content: prompt
                 }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             temperature: 0.3,
-            max_tokens: 150
+            max_completion_tokens: 150,
+            reasoning_effort: "low",
+            reasoning_format: "hidden",
         });
 
         const aiResponse = chatCompletion.choices[0].message.content;

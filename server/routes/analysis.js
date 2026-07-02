@@ -79,7 +79,7 @@ router.post('/analyze', async (req, res) => {
             
         Return only the JSON object, no other text.`;
 
-        console.log('Calling Groq API with Llama-3.3-70B-Versatile...');
+        console.log('Calling Groq API with GPT-OSS-120B...');
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [
@@ -92,10 +92,12 @@ router.post('/analyze', async (req, res) => {
                     content: userPrompt
                 }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             temperature: 0.4,
-            max_tokens: 1000,
-            top_p: 1
+            max_completion_tokens: 1000,
+            top_p: 1,
+            reasoning_effort: "low",
+            reasoning_format: "hidden"
         });
 
         console.log('Groq response received');
@@ -107,7 +109,7 @@ router.post('/analyze', async (req, res) => {
 
             aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);aiResponse
+            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
             const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
 
             analysisData = JSON.parse(jsonString);
